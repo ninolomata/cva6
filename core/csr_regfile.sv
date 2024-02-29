@@ -808,7 +808,7 @@ module csr_regfile
       unique case (conv_csr_addr.address)
         // Floating-Point
         riscv::CSR_FFLAGS: begin
-          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (v_q && vsstatus_q.fs == riscv::Off))) begin
+          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (CVA6Cfg.RVH && v_q && vsstatus_q.fs == riscv::Off))) begin
             dirty_fp_state_csr = 1'b1;
             fcsr_d.fflags = csr_wdata[4:0];
             // this instruction has side-effects
@@ -818,7 +818,7 @@ module csr_regfile
           end
         end
         riscv::CSR_FRM: begin
-          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (v_q && vsstatus_q.fs == riscv::Off))) begin
+          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (CVA6Cfg.RVH && v_q && vsstatus_q.fs == riscv::Off))) begin
             dirty_fp_state_csr = 1'b1;
             fcsr_d.frm    = csr_wdata[2:0];
             // this instruction has side-effects
@@ -828,7 +828,7 @@ module csr_regfile
           end
         end
         riscv::CSR_FCSR: begin
-          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (v_q && vsstatus_q.fs == riscv::Off))) begin
+          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (CVA6Cfg.RVH && v_q && vsstatus_q.fs == riscv::Off))) begin
             dirty_fp_state_csr = 1'b1;
             fcsr_d[7:0] = csr_wdata[7:0];  // ignore writes to reserved space
             // this instruction has side-effects
@@ -838,7 +838,7 @@ module csr_regfile
           end
         end
         riscv::CSR_FTRAN: begin
-          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (v_q && vsstatus_q.fs == riscv::Off))) begin
+          if (CVA6Cfg.FpPresent && !(mstatus_q.fs == riscv::Off || (CVA6Cfg.RVH && v_q && vsstatus_q.fs == riscv::Off))) begin
             dirty_fp_state_csr = 1'b1;
             fcsr_d.fprec = csr_wdata[6:0];  // ignore writes to reserved space
             // this instruction has side-effects
