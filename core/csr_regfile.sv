@@ -2191,7 +2191,7 @@ module csr_regfile
           riscv::CSR_MENVCFG: begin
             fiom_d = csr_wdata[0];
             if (CVA6Cfg.RVSSTC && CVA6Cfg.XLEN == 64)
-              mstce_d = csr_wdata[64];
+              mstce_d = csr_wdata[63];
           end
           riscv::CSR_MENVCFGH:
           if (CVA6Cfg.XLEN == 32) begin
