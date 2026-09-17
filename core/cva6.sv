@@ -577,6 +577,7 @@ module cva6
   logic [CVA6Cfg.XLEN-1:0] vstopi;
   riscv::pmpcfg_t [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0] pmpcfg;
   logic [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr;
+  logic [2:0] mseccfg;
   logic [31:0] mcountinhibit_csr_perf;
   riscv::spmpcfg_t [(CVA6Cfg.NrSPMPEntries > 0 ? CVA6Cfg.NrSPMPEntries-1 : 0):0] spmpcfg;
   riscv::spmpcfg_t [(CVA6Cfg.NrVSPMPEntries > 0 ? CVA6Cfg.NrVSPMPEntries-1 : 0):0] vspmpcfg;
@@ -1043,6 +1044,7 @@ module cva6
       // PMP
       .pmpcfg_i                (pmpcfg),
       .pmpaddr_i               (pmpaddr),
+      .mseccfg_i               (mseccfg),
       // SPMP
       .spmpcfg_i               (spmpcfg),
       .vspmpcfg_i              (vspmpcfg),
@@ -1198,6 +1200,7 @@ module cva6
       .perf_we_o               (we_csr_perf),
       .pmpcfg_o                (pmpcfg),
       .pmpaddr_o               (pmpaddr),
+      .mseccfg_o               (mseccfg),
       .spmpcfg_o               (spmpcfg),
       .vspmpcfg_o              (vspmpcfg),
       .spmpen_o                (spmpen),

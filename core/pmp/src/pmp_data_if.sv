@@ -37,7 +37,8 @@ module pmp_data_if
     input logic ld_st_v_i,
     // PMP
     input riscv::pmpcfg_t [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0] pmpcfg_i,
-    input logic [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i
+    input logic [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i,
+    input logic [2:0] mseccfg_i
 );
   // virtual address causing the exception
   logic [CVA6Cfg.XLEN-1:0] fetch_vaddr_xlen, lsu_vaddr_xlen;
@@ -105,6 +106,7 @@ module pmp_data_if
       // Configuration
       .conf_addr_i  (pmpaddr_i),
       .conf_i       (pmpcfg_i),
+      .mseccfg_i,
       .allow_o      (pmp_if_allow)
   );
 
@@ -149,6 +151,7 @@ module pmp_data_if
       // Configuration
       .conf_addr_i  (pmpaddr_i),
       .conf_i       (pmpcfg_i),
+      .mseccfg_i,
       .allow_o      (data_allow_o)
   );
 

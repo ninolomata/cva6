@@ -102,7 +102,8 @@ module cva6_mmu
     // PMP
 
     input riscv::pmpcfg_t [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0] pmpcfg_i,
-    input logic           [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i
+    input logic           [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i,
+    input logic [2:0] mseccfg_i
 );
 
   // memory management, pte for cva6
@@ -349,6 +350,7 @@ module cva6_mmu
       // PMP
       .pmpcfg_i   (pmpcfg_i),
       .pmpaddr_i  (pmpaddr_i),
+      .mseccfg_i,
       .bad_paddr_o(ptw_bad_paddr),
       .bad_gpaddr_o(ptw_bad_gpaddr)
   );

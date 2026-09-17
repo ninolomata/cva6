@@ -72,6 +72,8 @@ package config_pkg;
     bit                          RVZCMP;
     // Smcsrind/Sscsrind RISC-V extension
     bit                          RVCSRIND;
+    // Smepmp RISC-V extension
+    bit                          RVSMEPMP;
     // Zicond RISC-V extension
     bit                          RVZiCond;
     // Zicntr RISC-V extension
@@ -272,6 +274,7 @@ package config_pkg;
     bit          RVZCB;
     bit          RVZCMP;
     bit          RVCSRIND;
+    bit          RVSMEPMP;
     bit          XFVec;
     bit          CvxifEn;
     bit          RVZiCond;
@@ -412,6 +415,7 @@ package config_pkg;
     assert (Cfg.NrExecuteRegionRules <= NrMaxRules);
     assert (Cfg.NrCachedRegionRules <= NrMaxRules);
     assert (Cfg.NrPMPEntries <= 64);
+    assert (!Cfg.RVSMEPMP || Cfg.NrPMPEntries > 0);
     assert (!Cfg.SpmpPresent || (Cfg.SpmpPresent && Cfg.RVCSRIND));
     assert (!(Cfg.SuperscalarEn && Cfg.RVF));
     assert (!(Cfg.SuperscalarEn && Cfg.RVZCMP));

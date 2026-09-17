@@ -85,6 +85,7 @@ module cva6_ptw
     // PMP
     input riscv::pmpcfg_t [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0] pmpcfg_i,
     input logic [(CVA6Cfg.NrPMPEntries > 0 ? CVA6Cfg.NrPMPEntries-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i,
+    input logic [2:0] mseccfg_i,
     output logic [CVA6Cfg.PLEN-1:0] bad_paddr_o,
     output logic [CVA6Cfg.GPLEN-1:0] bad_gpaddr_o
 );
@@ -240,6 +241,7 @@ module cva6_ptw
       // Configuration
       .conf_addr_i  (pmpaddr_i),
       .conf_i       (pmpcfg_i),
+      .mseccfg_i,
       .allow_o      (allow_access)
   );
 

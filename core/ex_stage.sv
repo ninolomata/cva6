@@ -225,6 +225,7 @@ module ex_stage
     input riscv::pmpcfg_t [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0] pmpcfg_i,
     // Report the PMP addresses - CSR_REGFILE
     input logic [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i,
+    input logic [2:0] mseccfg_i,
     // SPMP configuration
     input riscv::spmpcfg_t [(CVA6Cfg.NrSPMPEntries > 0 ? CVA6Cfg.NrSPMPEntries-1 : 0):0] spmpcfg_i,
     // vSPMP configuration
@@ -601,6 +602,7 @@ module ex_stage
       .tinst_i               (lsu_tinst),
       .pmpcfg_i,
       .pmpaddr_i,
+      .mseccfg_i,
       .spmpcfg_i,
       .vspmpcfg_i,
       .spmpen_i,

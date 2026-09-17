@@ -178,6 +178,7 @@ module csr_regfile
     output riscv::pmpcfg_t [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0] pmpcfg_o,
     // PMP addresses - EX_STAGE
     output logic [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_o,
+    output logic [2:0] mseccfg_o,
     // SPMP configuration
     output riscv::spmpcfg_t [(CVA6Cfg.NrSPMPEntries > 0 ? CVA6Cfg.NrSPMPEntries-1 : 0):0]  spmpcfg_o,
     // vSPMP configuration
@@ -316,6 +317,8 @@ module csr_regfile
   riscv::pmpcfg_t [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource : 0):0] pmpcfg_q, pmpcfg_d, pmpcfg_next;
   logic [(CVA6Cfg.NrPMPResource>0?CVA6Cfg.NrPMPResource-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_q, pmpaddr_d, pmpaddr_next;
   logic [MHPMCounterNum+3-1:0] mcountinhibit_d, mcountinhibit_q;
+  logic [2:0] mseccfg_d, mseccfg_q;
+  logic any_pmp_locked;
   logic [63:0] spmpen;
   logic [63:0] vspmpen;
   logic [63:0] hspmpen;
@@ -337,6 +340,14 @@ module csr_regfile
 
   assign pmpcfg_o  = pmpcfg_q[(CVA6Cfg.NrPMPResource>0?CVA6Cfg.NrPMPResource-1 : 0):0];
   assign pmpaddr_o = pmpaddr_q[(CVA6Cfg.NrPMPResource>0?CVA6Cfg.NrPMPResource-1 : 0):0];
+  assign mseccfg_o = mseccfg_q;
+
+  always_comb begin
+    any_pmp_locked = 1'b0;
+    for (int unsigned i = 0; i < CVA6Cfg.NrPMPEntries; i++) begin
+      any_pmp_locked |= pmpcfg_q[i].locked;
+    end
+  end
 
   riscv::spmpcfg_t [(CVA6Cfg.NrSPMPEntries > 0 ? CVA6Cfg.NrSPMPEntries-1 : 0):0] spmpcfg_q, spmpcfg_d;
   riscv::spmpcfg_t [(CVA6Cfg.NrVSPMPEntries > 0 ? CVA6Cfg.NrVSPMPEntries-1 : 0):0] vspmpcfg_q, vspmpcfg_d;
@@ -1162,6 +1173,20 @@ module csr_regfile
             end
             else read_access_exception = 1'b1;
           end
+          riscv::CSR_MSECCFG: begin
+            if (CVA6Cfg.RVSMEPMP) begin
+              csr_rdata = {{CVA6Cfg.XLEN-3{1'b0}}, mseccfg_q};
+            end else begin
+              read_access_exception = 1'b1;
+            end
+          end
+          riscv::CSR_MSECCFGH: begin
+            if (CVA6Cfg.RVSMEPMP && CVA6Cfg.XLEN == 32) begin
+              csr_rdata = '0;
+            end else begin
+              read_access_exception = 1'b1;
+            end
+          end
           default: read_access_exception = 1'b1;
         endcase
       end
@@ -1319,6 +1344,7 @@ module csr_regfile
     instret         = instret_q;
 
     mcountinhibit_d = mcountinhibit_q;
+    mseccfg_d       = mseccfg_q;
 
     // --------------------
     // Counters
@@ -2366,9 +2392,21 @@ module csr_regfile
             if (CVA6Cfg.XLEN == 64 && index[0] == 1'b1) update_access_exception = 1'b1;
             else begin
               // Check if entry is delegated to S-mode
-              if (!CVA6Cfg.SpmpPresent || index[5:0] < CVA6Cfg.NrPMPEntries) begin
+              if (!CVA6Cfg.SpmpPresent ||
+                  index[5:0] < (CVA6Cfg.NrPMPEntries / 4)) begin
                 for (int i = 0; i < CVA6Cfg.XLEN / 8; i++) begin
-                  if (!pmpcfg_q[index*4+i].locked) pmpcfg_d[index*4+i] = csr_wdata[i*8+:8];
+                  automatic riscv::pmpcfg_t new_cfg = riscv::pmpcfg_t'(csr_wdata[i*8+:8]);
+                  // RW=01 is reserved until MML gives it the shared-region meaning.
+                  if (!(CVA6Cfg.RVSMEPMP && mseccfg_q[0]) &&
+                      !new_cfg.access_type.r && new_cfg.access_type.w)
+                    new_cfg.access_type.w = 1'b0;
+                  if ((!pmpcfg_q[index*4+i].locked ||
+                       (CVA6Cfg.RVSMEPMP && mseccfg_q[2])) &&
+                      !(CVA6Cfg.RVSMEPMP && mseccfg_q[0] && !mseccfg_q[2] &&
+                        new_cfg.locked &&
+                        (new_cfg.access_type.x ||
+                         (!new_cfg.access_type.r && new_cfg.access_type.w))))
+                    pmpcfg_d[index*4+i] = new_cfg;
                 end
               end
               else begin
@@ -2445,7 +2483,9 @@ module csr_regfile
             // Check if entry is delegated to S-mode
             if (!CVA6Cfg.SpmpPresent || index[5:0] < CVA6Cfg.NrPMPEntries) begin
               // check if the entry or the entry above is locked
-              if (!pmpcfg_q[index].locked && !(pmpcfg_q[index+1].locked && pmpcfg_q[index+1].addr_mode == riscv::TOR)) begin
+              if ((!pmpcfg_q[index].locked || (CVA6Cfg.RVSMEPMP && mseccfg_q[2])) &&
+                  (!(pmpcfg_q[index+1].locked && pmpcfg_q[index+1].addr_mode == riscv::TOR) ||
+                   (CVA6Cfg.RVSMEPMP && mseccfg_q[2]))) begin
                 pmpaddr_d[index] = csr_wdata[CVA6Cfg.PLEN-3:0];
               end
             end
@@ -2455,6 +2495,28 @@ module csr_regfile
           end
           riscv::CSR_MPMPDELEG: begin
             if (!CVA6Cfg.SpmpPresent) begin
+              update_access_exception = 1'b1;
+            end
+          end
+          riscv::CSR_MSECCFG: begin
+            if (CVA6Cfg.RVSMEPMP) begin
+              // MML and MMWP are sticky until reset. RLB may only be set
+              // before any PMP entry is locked or while it is already set.
+              mseccfg_d[1:0] = mseccfg_q[1:0] | csr_wdata[1:0];
+              if (!csr_wdata[2]) begin
+                mseccfg_d[2] = 1'b0;
+              end else if (mseccfg_q[2] || !any_pmp_locked) begin
+                mseccfg_d[2] = 1'b1;
+              end
+              // MML/MMWP change the interpretation and default behavior of
+              // every PMP entry, so serialize the new protection regime.
+              flush_o = 1'b1;
+            end else begin
+              update_access_exception = 1'b1;
+            end
+          end
+          riscv::CSR_MSECCFGH: begin
+            if (!(CVA6Cfg.RVSMEPMP && CVA6Cfg.XLEN == 32)) begin
               update_access_exception = 1'b1;
             end
           end
@@ -3528,6 +3590,7 @@ module csr_regfile
       dcache_q         <= {{CVA6Cfg.XLEN - 1{1'b0}}, 1'b1};
       icache_q         <= {{CVA6Cfg.XLEN - 1{1'b0}}, 1'b1};
       mcountinhibit_q  <= '0;
+      mseccfg_q        <= '0;
       acc_cons_q       <= {{CVA6Cfg.XLEN - 1{1'b0}}, CVA6Cfg.EnableAccelerator};
       // supervisor mode registers
       if (CVA6Cfg.RVS) begin
@@ -3626,6 +3689,7 @@ module csr_regfile
       dcache_q        <= dcache_d;
       icache_q        <= icache_d;
       mcountinhibit_q <= mcountinhibit_d;
+      mseccfg_q       <= mseccfg_d;
       acc_cons_q      <= acc_cons_d;
       // supervisor mode registers
       if (CVA6Cfg.RVS) begin

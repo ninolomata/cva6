@@ -151,6 +151,7 @@ module load_store_unit
     input  riscv::pmpcfg_t [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0] pmpcfg_i,
     // PMP address - CSR_REGFILE
     input  logic           [(CVA6Cfg.NrPMPResource > 0 ? CVA6Cfg.NrPMPResource-1 : 0):0][CVA6Cfg.PLEN-3:0] pmpaddr_i,
+    input  logic [2:0] mseccfg_i,
 
     // SPMP configuration - CSR_REGFILE
     input  riscv::spmpcfg_t [(CVA6Cfg.NrSPMPEntries > 0 ? CVA6Cfg.NrSPMPEntries-1 : 0):0] spmpcfg_i,
@@ -329,7 +330,8 @@ module load_store_unit
         .req_port_o(dcache_req_ports_o[0]),
 
         .pmpcfg_i(pmpcfg_i[PMPHighIdx:PMPLowIdx]),
-        .pmpaddr_i(pmpaddr_i[PMPHighIdx:PMPLowIdx])
+        .pmpaddr_i(pmpaddr_i[PMPHighIdx:PMPLowIdx]),
+        .mseccfg_i
     );
   end else begin : gen_no_mmu
 
@@ -506,7 +508,8 @@ module load_store_unit
       .ld_st_priv_lvl_i    (ld_st_priv_lvl_i),
       .ld_st_v_i           (ld_st_v_i),
       .pmpcfg_i            (pmpcfg_i[PMPHighIdx:PMPLowIdx]),
-      .pmpaddr_i           (pmpaddr_i[PMPHighIdx:PMPLowIdx])
+      .pmpaddr_i           (pmpaddr_i[PMPHighIdx:PMPLowIdx]),
+      .mseccfg_i
   );
 
   logic store_buffer_empty;

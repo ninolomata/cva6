@@ -494,6 +494,8 @@ package riscv;
     CSR_MVIPH            = 12'h319,
     CSR_MSTATUSH         = 12'h310,
     CSR_MPMPDELEG        = 12'h316,
+    CSR_MSECCFG          = 12'h747,
+    CSR_MSECCFGH         = 12'h757,
     CSR_MCOUNTINHIBIT    = 12'h320,
     CSR_MHPM_EVENT_3     = 12'h323,  //Machine performance monitoring Event Selector
     CSR_MHPM_EVENT_4     = 12'h324,  //Machine performance monitoring Event Selector
