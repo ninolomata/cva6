@@ -49,6 +49,31 @@ set_property include_dirs { \
 	"../../core/include" \
 } [current_fileset]
 
+# AIA delivery-mode conditionals must be visible in every independent
+# read_verilog invocation. Select the mode once at synthesis time:
+#   APLIC_MODE=direct  (default)
+#   APLIC_MODE=msi
+if {[info exists ::env(APLIC_MODE)]} {
+    set aplic_mode [string tolower $::env(APLIC_MODE)]
+} else {
+    set aplic_mode direct
+}
+
+switch -- $aplic_mode {
+    direct {
+        set aplic_verilog_defines {DIRECT_MODE}
+    }
+    msi {
+        # The SoC package uses CVA6_APLIC_MSI_MODE; the AIA RTL needs its
+        # delivery and embedded-IMSIC conditionals in each source read.
+        set aplic_verilog_defines {CVA6_APLIC_MSI_MODE MSI_MODE AIA_EMBEDDED}
+    }
+    default {
+        error "Unsupported APLIC_MODE '$aplic_mode': use direct or msi"
+    }
+}
+set_property verilog_define $aplic_verilog_defines [current_fileset]
+
 source scripts/add_sources.tcl
 
 set_property top ${project}_xilinx [current_fileset]
