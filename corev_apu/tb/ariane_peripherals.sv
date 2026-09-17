@@ -182,11 +182,33 @@ module ariane_peripherals #(
     `REG_BUS_ASSIGN_TO_REQ(aplic_regmap_req, aplic_reg_bus)
     `REG_BUS_ASSIGN_FROM_RSP(aplic_reg_bus, aplic_regmap_resp)
 
+`ifdef MSI_MODE
     // MSI Bus to signal interrupts to the IMSIC
     ariane_axi_soc::req_slv_t    msi_req;
     ariane_axi_soc::resp_slv_t   msi_resp;
     `AXI_ASSIGN_TO_REQ(msi_req, imsic)
     `AXI_ASSIGN_FROM_RESP(imsic, msi_resp)
+`else
+    // No IMSIC is instantiated in direct mode.  Terminate its legacy AXI
+    // aperture so an accidental access receives a decode error instead of
+    // hanging the bus.
+    ariane_axi_soc::req_slv_t    imsic_err_req;
+    ariane_axi_soc::resp_slv_t   imsic_err_resp;
+    `AXI_ASSIGN_TO_REQ(imsic_err_req, imsic)
+    `AXI_ASSIGN_FROM_RESP(imsic, imsic_err_resp)
+
+    axi_err_slv #(
+        .AxiIdWidth ( AxiIdWidth                    ),
+        .req_t      ( ariane_axi_soc::req_slv_t     ),
+        .resp_t     ( ariane_axi_soc::resp_slv_t    )
+    ) i_imsic_err_slv (
+        .clk_i      ( clk_i          ),
+        .rst_ni     ( rst_ni         ),
+        .test_i     ( 1'b0           ),
+        .slv_req_i  ( imsic_err_req  ),
+        .slv_resp_o ( imsic_err_resp )
+    );
+`endif
 
     localparam imsic_protocol_pkg::protocol_cfg_t ImsicProtocolCfg = '{
         AXI_ADDR_WIDTH: AxiAddrWidth,
@@ -194,7 +216,26 @@ module ariane_peripherals #(
         AXI_ID_WIDTH:   AxiIdWidth
     };
 
+`ifdef MSI_MODE
     assign irq_o = imsic_csr_o.Xeip_targets;
+`else
+    logic [aia_pkg::UserNrHarts-1:0] aplic_eintp [aplic_pkg::SysNrDomains-1:0];
+
+    // irq_o[0] is MEIP and irq_o[1] is SEIP in CVA6.  This SoC has one
+    // M-mode root domain (0), one S-mode child domain (1), and one core.
+    // Match the FPGA integration's registered peripheral/core boundary.
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni) begin
+            irq_o <= '0;
+        end else begin
+            irq_o    <= '0;
+            irq_o[0] <= aplic_eintp[0][0];
+            irq_o[1] <= aplic_eintp[1][0];
+        end
+    end
+
+    assign imsic_csr_o = '0;
+`endif
     
     aplic_top #(
         .AplicCfg       ( aplic_pkg::DefaultAplicCfg        ),
@@ -210,10 +251,14 @@ module ariane_peripherals #(
         .i_irq_sources  ( {irq_sources[ariane_soc::NumSources-2:0], 1'b0}),
         .i_req_cfg      ( aplic_regmap_req                  ),
         .o_resp_cfg     ( aplic_regmap_resp                 ),
+`ifdef MSI_MODE
         .i_imsic_csr    ( imsic_csr_i                       ),
         .o_imsic_csr    ( imsic_csr_o                       ),         
         .i_imsic_req    ( msi_req                           ),
         .o_imsic_resp   ( msi_resp                          )
+`else
+        .o_eintp_cpu    ( aplic_eintp                       )
+`endif
     );
 
     // ---------------

@@ -15,9 +15,6 @@
 // include KINTEX7 specific code (relevant for KC705, GENESYSII,...)
 `define KINTEX7
 
-`define MSI_MODE
-`define AIA_EMBEDDED
-
 `define ARIANE_DATA_WIDTH 64
 
 // Instantiate protocl checker

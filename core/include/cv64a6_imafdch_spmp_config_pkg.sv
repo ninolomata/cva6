@@ -7,8 +7,7 @@
 //
 // Original Author: Jean-Roch COULON - Thales
 
-`define MSI_MODE
-`define AIA_EMBEDDED
+`define DIRECT_MODE
 
 package cva6_config_pkg;
 
