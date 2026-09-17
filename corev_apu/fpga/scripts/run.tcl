@@ -99,6 +99,7 @@ report_cdc                                                              -file re
 report_clock_interaction                                                -file reports/$project.clock_interaction.rpt
 
 # set for RuntimeOptimized implementation
+set_property "steps.opt_design.args.directive" "NoBramPowerOpt" [get_runs impl_1]
 set_property "steps.place_design.args.directive" "RuntimeOptimized" [get_runs impl_1]
 set_property "steps.route_design.args.directive" "RuntimeOptimized" [get_runs impl_1]
 
