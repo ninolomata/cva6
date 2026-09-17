@@ -44,6 +44,7 @@ module spmp_interface #(
 
     output logic lsu_valid_o,
     output logic lsu_is_store_o,
+    output logic [CVA6Cfg.VLEN-1:0] lsu_vaddr_o,
     output logic [CVA6Cfg.PLEN-1:0] lsu_paddr_o,
     output exception_t lsu_exception_o,
 
@@ -92,6 +93,7 @@ module spmp_interface #(
     //----------
 
     typedef struct packed {
+        logic [CVA6Cfg.VLEN-1:0] vaddr;
         logic [CVA6Cfg.PLEN-1:0] addr;
         logic is_store;
         exception_t ex;
@@ -114,6 +116,7 @@ module spmp_interface #(
                           (riscv::ACCESS_WRITE) : 
                           (riscv::ACCESS_READ);
 
+        lsu_data_d.vaddr        = lsu_vaddr_i;
         lsu_data_d.addr         = lsu_req_addr;
         lsu_data_d.is_store     = lsu_is_store_i;
         lsu_data_d.ex           = misaligned_ex_i;
@@ -126,6 +129,7 @@ module spmp_interface #(
 
         lsu_valid_o     = lsu_req_q;
         lsu_is_store_o  = lsu_data_q.is_store;
+        lsu_vaddr_o     = lsu_data_q.vaddr;
         lsu_paddr_o     = lsu_data_q.addr;
         lsu_exception_o = lsu_data_q.ex;
 

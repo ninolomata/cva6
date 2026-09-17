@@ -216,6 +216,7 @@ module load_store_unit
   logic                    translation_req;
   logic                    translation_valid;
   logic [CVA6Cfg.VLEN-1:0] mmu_vaddr;
+  logic [CVA6Cfg.VLEN-1:0] pmp_vaddr;
   logic [CVA6Cfg.PLEN-1:0] mmu_paddr, lsu_paddr;
   logic         [                     31:0] mmu_tinst;
   logic                                     mmu_hs_ld_st_inst;
@@ -258,6 +259,7 @@ module load_store_unit
   // -------------------
 
   if (CVA6Cfg.MmuPresent) begin : gen_mmu
+    assign pmp_vaddr = mmu_vaddr;
     localparam HYP_EXT = CVA6Cfg.RVH ? 1 : 0;
 
     cva6_mmu #(
@@ -371,6 +373,7 @@ module load_store_unit
 
           .lsu_valid_o      (pmp_translation_valid),
           .lsu_is_store_o   (pmp_is_store),
+          .lsu_vaddr_o      (pmp_vaddr),
           .lsu_paddr_o      (lsu_paddr),
           .lsu_exception_o  (pmp_exception),
 
@@ -413,6 +416,7 @@ module load_store_unit
 
           .lsu_valid_o      (pmp_translation_valid),
           .lsu_is_store_o   (pmp_is_store),
+          .lsu_vaddr_o      (pmp_vaddr),
           .lsu_paddr_o      (lsu_paddr),
           .lsu_exception_o  (pmp_exception),
 
@@ -438,11 +442,13 @@ module load_store_unit
       // Delay of 1 cycle to match MMU latency giving the address tag
       always_ff @(posedge clk_i or negedge rst_ni) begin
         if (~rst_ni) begin
+          pmp_vaddr <= '0;
           lsu_paddr <= '0;
           pmp_exception <= '0;
           pmp_translation_valid <= 1'b0;
           pmp_is_store <= 1'b0;
         end else begin
+          pmp_vaddr <= mmu_vaddr;
           if (CVA6Cfg.VLEN >= CVA6Cfg.PLEN) begin : gen_virtual_physical_address_lsu
             lsu_paddr <= mmu_vaddr[CVA6Cfg.PLEN-1:0];
           end else begin
@@ -489,7 +495,7 @@ module load_store_unit
       .icache_fetch_vaddr_i(icache_areq_i.fetch_vaddr),
       .lsu_valid_i         (pmp_translation_valid),
       .lsu_paddr_i         (lsu_paddr),
-      .lsu_vaddr_i         (mmu_vaddr),
+      .lsu_vaddr_i         (pmp_vaddr),
       .lsu_exception_i     (pmp_exception),
       .lsu_is_store_i      (pmp_is_store),
       .lsu_valid_o         (translation_valid),
