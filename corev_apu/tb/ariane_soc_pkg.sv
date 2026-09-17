@@ -13,12 +13,30 @@
 
 /*verilator tracing_off*/
 
+// APLIC delivery is a SoC integration choice. Define CVA6_APLIC_MSI_MODE in
+// the SoC build to select MSI delivery; direct delivery is the default. This
+// file is compiled before the AIA RTL, so the selected port set is fixed here
+// rather than in the reusable AIA package.
+`ifdef CVA6_APLIC_MSI_MODE
+  `define MSI_MODE
+  `define AIA_EMBEDDED
+`else
+  `define DIRECT_MODE
+`endif
+
 package ariane_soc;
   // M-Mode Hart, S-Mode Hart
   localparam int unsigned NumTargets = 2;
   // Uart, SPI, Ethernet, reserved
   localparam int unsigned NumSources = 32;
   localparam int unsigned MaxPriority = 7;
+  localparam int unsigned AplicNrSources = NumSources;
+  localparam int unsigned AplicNrHarts = 5;
+`ifdef CVA6_APLIC_MSI_MODE
+  localparam bit AplicMsiMode = 1'b1;
+`else
+  localparam bit AplicMsiMode = 1'b0;
+`endif
 
   localparam NrSlaves = 2; // actually masters, but slaves on the crossbar
 

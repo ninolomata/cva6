@@ -72,6 +72,17 @@ module ariane_peripherals #(
     // 1. AIA
     // ---------------
     logic [ariane_soc::NumSources-1:0] irq_sources;
+    localparam aplic_pkg::aplic_cfg_t ArianeAplicCfg = '{
+        NrSources:    int'(ariane_soc::AplicNrSources),
+        NrDomains:    aplic_pkg::DefaultAplicCfg.NrDomains,
+        NrDomainsM:   aplic_pkg::DefaultAplicCfg.NrDomainsM,
+        NrHarts:      int'(ariane_soc::AplicNrHarts),
+        NrSourcesW:   shortint'((ariane_soc::AplicNrSources <= 1) ? 1 : $clog2(ariane_soc::AplicNrSources)),
+        NrDomainsW:   aplic_pkg::DefaultAplicCfg.NrDomainsW,
+        NrHartsW:     shortint'((ariane_soc::AplicNrHarts <= 1) ? 1 : $clog2(ariane_soc::AplicNrHarts)),
+        DeliveryMode: ariane_soc::AplicMsiMode,
+        DomainsCfg:   aplic_pkg::DefaultAplicCfg.DomainsCfg
+    };
 
     // Unused interrupt sources
     assign irq_sources[ariane_soc::NumSources-1:ariane_soc::LAST_IRQ] = '0;
@@ -226,7 +237,7 @@ module ariane_peripherals #(
 `ifdef MSI_MODE
     assign irq_o = imsic_csr_o.Xeip_targets;
 `else
-    logic [aia_pkg::UserNrHarts-1:0] aplic_eintp [aplic_pkg::SysNrDomains-1:0];
+    logic [ArianeAplicCfg.NrHarts-1:0] aplic_eintp [ArianeAplicCfg.NrDomains-1:0];
 
     // irq_o[0] is MEIP and irq_o[1] is SEIP in CVA6. Register the APLIC
     // delivery lines at the peripheral/core boundary. Without this cut, the
@@ -246,7 +257,7 @@ module ariane_peripherals #(
 `endif
     
     aplic_top #(
-        .AplicCfg       ( aplic_pkg::DefaultAplicCfg        ),
+        .AplicCfg       ( ArianeAplicCfg                    ),
         .ImsicCfg       ( imsic_pkg::DefaultImsicCfg        ),
         .ProtocolCfg    ( ImsicProtocolCfg                  ),
         .reg_req_t      ( aplic_reg_req_t                   ),
@@ -256,7 +267,7 @@ module ariane_peripherals #(
     ) aplic_top_embedded_i (
         .i_clk          ( clk_i                             ),
         .ni_rst         ( rst_ni                            ),
-        .i_irq_sources  ( {irq_sources[ariane_soc::NumSources-2:0], 1'b0}),
+        .i_irq_sources  ( irq_sources                       ),
         .i_req_cfg      ( aplic_regmap_req                  ),
         .o_resp_cfg     ( aplic_regmap_resp                 ),
 `ifdef MSI_MODE

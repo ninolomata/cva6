@@ -7,8 +7,6 @@
 //
 // Original Author: Jean-Roch COULON - Thales
 
-`define DIRECT_MODE
-
 package cva6_config_pkg;
 
   localparam CVA6ConfigXlen = 64;
