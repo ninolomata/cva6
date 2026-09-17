@@ -57,4 +57,5 @@
 	url = https://github.com/pulp-platform/gpio.git
 [submodule "corev_apu/aia"]
 	path = corev_apu/aia
-	url = git@github.com:zero-day-labs/riscv-aia.git
+	url = https://github.com/ninolomata/riscv-aia.git
+	branch = nino-fix
