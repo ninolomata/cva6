@@ -72,8 +72,6 @@ switch -- $aplic_mode {
         error "Unsupported APLIC_MODE '$aplic_mode': use direct or msi"
     }
 }
-set_property verilog_define $aplic_verilog_defines [current_fileset]
-
 source scripts/add_sources.tcl
 
 set_property top ${project}_xilinx [current_fileset]
@@ -102,6 +100,11 @@ set file_obj [get_files -of_objects [get_filesets sources_1] [list "*$file" "$re
 set_property -dict { file_type {Verilog Header} is_global_include 1} -objects $file_obj
 
 update_compile_order -fileset sources_1
+
+# Add the selected delivery mode after every source has been registered.
+# Vivado serializes this fileset property into ariane.xpr, so a later GUI
+# synthesis run receives the same defines as this batch build.
+set_property verilog_define $aplic_verilog_defines [get_filesets sources_1]
 
 add_files -fileset constrs_1 -norecurse constraints/$project.xdc
 

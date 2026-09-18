@@ -909,7 +909,9 @@ module ariane_peripherals #(
 
         apb_timer #(
                 .APB_ADDR_WIDTH ( 32 ),
-                .TIMER_CNT      ( 2  )
+                .TIMER_CNT      ( 2  ),
+                // Timer 1 compare is the level-triggered APLIC benchmark source.
+                .LEVEL_COMPARE  ( 2'b10 )
         ) i_timer (
             .HCLK    ( clk_i                                                               ),
             .HRESETn ( rst_ni                                                              ),
