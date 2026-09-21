@@ -79,7 +79,9 @@ module pmp_data_if
 
     // if it didn't match any execute region throw an `Instruction Access Fault` (PMA)
     // or if PMP reject the access
-    if (!match_any_execute_region || !pmp_if_allow) begin
+    // Only check a valid translated fetch. Keep any existing MMU fault.
+    if (icache_areq_i.fetch_valid && !icache_areq_i.fetch_exception.valid &&
+        (!match_any_execute_region || !pmp_if_allow)) begin
       icache_areq_o.fetch_exception.cause = riscv::INSTR_ACCESS_FAULT;
       icache_areq_o.fetch_exception.valid = 1'b1;
       // For exception, the virtual address is required for tval, if no MMU is
@@ -121,10 +123,9 @@ module pmp_data_if
     pmp_access_type = lsu_is_store_i ? riscv::ACCESS_WRITE : riscv::ACCESS_READ;
 
     // If translation is not enabled, check the paddr immediately against PMPs
-    // Preserve misalignment rather than replacing it with a PMP access fault.
-    if (lsu_valid_i && !data_allow_o &&
-        !(lsu_exception_i.valid &&
-          (lsu_exception_i.cause inside {riscv::LD_ADDR_MISALIGNED, riscv::ST_ADDR_MISALIGNED}))) begin
+    // A failed translation has no usable final PA. Preserve its exception;
+    // only a successful translation can produce a new PMP access fault.
+    if (lsu_valid_i && !lsu_exception_i.valid && !data_allow_o) begin
       lsu_exception_o.valid = 1'b1;
 
       if (CVA6Cfg.TvalEn) begin
