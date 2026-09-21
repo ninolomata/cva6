@@ -62,6 +62,7 @@ module cva6_mmu
     // Cycle 1
     output logic lsu_valid_o,  // translation is valid
     output logic lsu_is_store_o,
+    output logic [CVA6Cfg.VLEN-1:0] lsu_vaddr_o,  // cycle-1 fault address
     output logic [CVA6Cfg.PLEN-1:0] lsu_paddr_o,  // translated address
     output exception_t lsu_exception_o,  // address translation threw an exception
     // General control signals
@@ -496,6 +497,8 @@ module cva6_mmu
   pte_cva6_t dtlb_gpte_n, dtlb_gpte_q;
   logic lsu_req_n, lsu_req_q;
   logic lsu_is_store_n, lsu_is_store_q;
+  exception_t misaligned_ex_n, misaligned_ex_q;
+  assign lsu_vaddr_o = lsu_vaddr_q;
   logic dtlb_hit_n, dtlb_hit_q;
   logic [CVA6Cfg.PtLevels-2:0] dtlb_is_page_n, dtlb_is_page_q;
 
@@ -515,11 +518,13 @@ module cva6_mmu
 
     lsu_valid_o = lsu_req_q;
     lsu_is_store_o = lsu_is_store_q;
-    lsu_exception_o = misaligned_ex_i;
+    lsu_exception_o = misaligned_ex_q;
+    misaligned_ex_n = misaligned_ex_i;
+    misaligned_ex_n.valid = misaligned_ex_i.valid && lsu_req_i;
 
     // we work with SV39 or SV32, so if VM is enabled, check that all bits [CVA6Cfg.VLEN-1:CVA6Cfg.SV-1] are equal to bit [CVA6Cfg.SV]
-    canonical_addr_check = (lsu_req_i && en_ld_st_translation_i &&
-           !((&lsu_vaddr_i[CVA6Cfg.VLEN-1:CVA6Cfg.SV-1]) == 1'b1 || (|lsu_vaddr_i[CVA6Cfg.VLEN-1:CVA6Cfg.SV-1]) == 1'b0));
+    canonical_addr_check = (lsu_req_q && en_ld_st_translation_i &&
+           !((&lsu_vaddr_q[CVA6Cfg.VLEN-1:CVA6Cfg.SV-1]) == 1'b1 || (|lsu_vaddr_q[CVA6Cfg.VLEN-1:CVA6Cfg.SV-1]) == 1'b0));
 
     // Check if the User flag is set, then we may only access it in supervisor mode
     // if SUM is enabled
@@ -540,7 +545,7 @@ module cva6_mmu
     lsu_dtlb_ppn_o        = (CVA6Cfg.PPNW)'(lsu_vaddr_n[((CVA6Cfg.PLEN > CVA6Cfg.VLEN) ? CVA6Cfg.VLEN -1: CVA6Cfg.PLEN -1 ):12]);
 
     // translation is enabled and no misaligned exception occurred
-    if ((en_ld_st_translation_i || en_ld_st_g_translation_i) && !misaligned_ex_i.valid) begin
+    if ((en_ld_st_translation_i || en_ld_st_g_translation_i) && !misaligned_ex_q.valid) begin
       lsu_valid_o = 1'b0;
 
       lsu_dtlb_ppn_o = (en_ld_st_g_translation_i && CVA6Cfg.RVH)? dtlb_g_content.ppn :dtlb_content.ppn;
@@ -737,6 +742,7 @@ module cva6_mmu
       dtlb_gpte_q     <= '0;
       dtlb_hit_q      <= '0;
       lsu_is_store_q  <= '0;
+      misaligned_ex_q <= '0;
       dtlb_is_page_q  <= '0;
       lsu_tinst_q     <= '0;
       hs_ld_st_inst_q <= '0;
@@ -746,6 +752,7 @@ module cva6_mmu
       dtlb_pte_q     <= dtlb_pte_n;
       dtlb_hit_q     <= dtlb_hit_n;
       lsu_is_store_q <= lsu_is_store_n;
+      misaligned_ex_q <= misaligned_ex_n;
       dtlb_is_page_q <= dtlb_is_page_n;
 
       if (CVA6Cfg.RVH) begin

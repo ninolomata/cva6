@@ -260,7 +260,7 @@ module load_store_unit
   // -------------------
 
   if (CVA6Cfg.MmuPresent) begin : gen_mmu
-    assign pmp_vaddr = mmu_vaddr;
+    // PMP consumes the cycle-1 MMU response, including its virtual address.
     localparam HYP_EXT = CVA6Cfg.RVH ? 1 : 0;
 
     cva6_mmu #(
@@ -295,6 +295,7 @@ module load_store_unit
 
         .lsu_valid_o    (pmp_translation_valid),
         .lsu_is_store_o (pmp_is_store),
+        .lsu_vaddr_o    (pmp_vaddr),
         .lsu_paddr_o    (lsu_paddr),
         .lsu_exception_o(pmp_exception),
 
