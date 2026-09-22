@@ -65,23 +65,24 @@ package cva6_config_pkg;
 
   localparam CVA6ConfigTvalEn = 1;
 
-  localparam CVA6ConfigNrPMPEntries = 64;
+  localparam CVA6ConfigNrPMPEntries = 32;
 
   localparam CVA6ConfigPerfCounterEn = 1;
 
   localparam config_pkg::cache_type_t CVA6ConfigDcacheType = config_pkg::WT;
 
-  localparam CVA6ConfigMmuPresent = 0;
+  localparam CVA6ConfigMmuPresent = 1;
 
-  localparam CVA6ConfigSpmpPresent = 1;
+  localparam CVA6ConfigSpmpPresent = 0;
   localparam CVA6ConfigPMPNum = 32;
   localparam CVA6ConfigPMPNumHyp = 32;
-  localparam CVA6ConfigSPMPSwitchOptEn = 1;
+  localparam CVA6ConfigSPMPSwitchOptEn = 0;
 
   localparam CVA6ConfigRvfiTrace = 1;
 
   localparam config_pkg::cva6_user_cfg_t cva6_cfg = '{
       XLEN: unsigned'(CVA6ConfigXlen),
+      EnableClintIpi: bit'(1),
       VLEN: unsigned'(64),
       FpgaEn: bit'(0),  // for Xilinx and Altera
       FpgaAlteraEn: bit'(0),  // for Altera (only)

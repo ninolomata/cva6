@@ -70,6 +70,7 @@ package build_config_pkg;
     cfg.RVC = CVA6Cfg.RVC;
     cfg.RVH = CVA6Cfg.RVH;
     cfg.RVSSTC = CVA6Cfg.RVSSTC;
+    cfg.EnableClintIpi = CVA6Cfg.EnableClintIpi;
     cfg.RVZCB = CVA6Cfg.RVZCB;
     cfg.RVZCMP = CVA6Cfg.RVZCMP;
     cfg.RVCSRIND = CVA6Cfg.RVCSRIND;

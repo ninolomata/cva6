@@ -2711,7 +2711,9 @@ module csr_regfile
     // Machine Mode External Interrupt Pending
     mip_d[riscv::IRQ_M_EXT] = irq_i[0];
     // Machine software interrupt
-    mip_d[riscv::IRQ_M_SOFT] = '0;
+    // AIA permits legacy IPIs alongside IMSIC external interrupts.
+    mip_d[riscv::IRQ_M_SOFT] = CVA6Cfg.EnableClintIpi ? ipi_i : 1'b0;
+    if (!CVA6Cfg.EnableClintIpi) mie_d[riscv::IRQ_M_SOFT] = 1'b0;
     // Timer interrupt pending, coming from platform timer
     mip_d[riscv::IRQ_M_TIMER] = time_irq_i;
     // Supervisor timer interrupt

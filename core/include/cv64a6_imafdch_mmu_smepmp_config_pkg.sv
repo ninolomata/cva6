@@ -7,7 +7,7 @@
 //
 // Original Author: Jean-Roch COULON - Thales
 
-
+// RV64 MMU + H extension + Smepmp; no SPMP stages.
 package cva6_config_pkg;
 
   localparam CVA6ConfigXlen = 64;
@@ -18,15 +18,18 @@ package cva6_config_pkg;
   localparam CVA6ConfigF8En = 0;
   localparam CVA6ConfigFVecEn = 0;
 
-  localparam CVA6ConfigCvxifEn = 0;
+  localparam CVA6ConfigCvxifEn = 1;
   localparam CVA6ConfigCExtEn = 1;
-  localparam CVA6ConfigZcbExtEn = 0;
+  localparam CVA6ConfigZcbExtEn = 1;
   localparam CVA6ConfigZcmpExtEn = 0;
   localparam CVA6ConfigAExtEn = 1;
-  localparam CVA6ConfigHExtEn = 0;  // always disabled
-  localparam CVA6ConfigBExtEn = 0;
+  localparam CVA6ConfigHExtEn = 1;
+  localparam CVA6ConfigSstcExtEn = 1;
+  localparam CVA6ConfigBExtEn = 1;
   localparam CVA6ConfigVExtEn = 0;
-  localparam CVA6ConfigRVZiCond = 0;
+  localparam CVA6ConfigCsrIndExtEn = 1;
+  localparam CVA6ConfigSmepmpExtEn = 1;
+  localparam CVA6ConfigRVZiCond = 1;
 
   localparam CVA6ConfigAxiIdWidth = 4;
   localparam CVA6ConfigAxiAddrWidth = 64;
@@ -42,6 +45,9 @@ package cva6_config_pkg;
   localparam CVA6ConfigDcacheByteSize = 32768;
   localparam CVA6ConfigDcacheSetAssoc = 8;
   localparam CVA6ConfigDcacheLineWidth = 128;
+
+  localparam CVA6ConfigDcacheFlushOnFence = 1'b1;
+  localparam CVA6ConfigDcacheInvalidateOnFlush = 1'b0;
 
   localparam CVA6ConfigDcacheIdWidth = 1;
   localparam CVA6ConfigMemTidWidth = 2;
@@ -60,7 +66,7 @@ package cva6_config_pkg;
 
   localparam CVA6ConfigTvalEn = 1;
 
-  localparam CVA6ConfigNrPMPEntries = 8;
+  localparam CVA6ConfigNrPMPEntries = 32;
 
   localparam CVA6ConfigPerfCounterEn = 1;
 
@@ -68,11 +74,16 @@ package cva6_config_pkg;
 
   localparam CVA6ConfigMmuPresent = 1;
 
+  localparam CVA6ConfigSpmpPresent = 0;
+  localparam CVA6ConfigPMPNum = 32;
+  localparam CVA6ConfigPMPNumHyp = 32;
+  localparam CVA6ConfigSPMPSwitchOptEn = 0;
+
   localparam CVA6ConfigRvfiTrace = 1;
 
   localparam config_pkg::cva6_user_cfg_t cva6_cfg = '{
       XLEN: unsigned'(CVA6ConfigXlen),
-      EnableClintIpi: bit'(0),
+      EnableClintIpi: bit'(1),
       VLEN: unsigned'(64),
       FpgaEn: bit'(0),  // for Xilinx and Altera
       FpgaAlteraEn: bit'(0),  // for Altera (only)
@@ -96,8 +107,11 @@ package cva6_config_pkg;
       RVV: bit'(CVA6ConfigVExtEn),
       RVC: bit'(CVA6ConfigCExtEn),
       RVH: bit'(CVA6ConfigHExtEn),
+      RVSSTC: bit'(CVA6ConfigSstcExtEn),
       RVZCB: bit'(CVA6ConfigZcbExtEn),
       RVZCMP: bit'(CVA6ConfigZcmpExtEn),
+      RVCSRIND: bit'(CVA6ConfigCsrIndExtEn),
+      RVSMEPMP: bit'(CVA6ConfigSmepmpExtEn),
       XFVec: bit'(CVA6ConfigFVecEn),
       CvxifEn: bit'(CVA6ConfigCvxifEn),
       RVZiCond: bit'(CVA6ConfigRVZiCond),
@@ -121,7 +135,12 @@ package cva6_config_pkg;
       PMPAddrRstVal: {64{64'h0}},
       PMPEntryReadOnly: 64'd0,
       PMPNapotEn: bit'(1),
-      NOCType: config_pkg::NOC_TYPE_L15_BIG_ENDIAN,
+      SpmpPresent: bit'(CVA6ConfigSpmpPresent),
+      PMPNum: unsigned'(CVA6ConfigPMPNum),
+      PMPNumHyp: unsigned'(CVA6ConfigPMPNumHyp),
+      SPMPSwitchOptEn: bit'(CVA6ConfigSPMPSwitchOptEn),
+      SPMPCfgRstVal: {64{64'h0}},
+      NOCType: config_pkg::NOC_TYPE_AXI4_ATOP,
       NrNonIdempotentRules: unsigned'(2),
       NonIdempotentAddrBase: 1024'({64'b0, 64'b0}),
       NonIdempotentLength: 1024'({64'b0, 64'b0}),
@@ -141,6 +160,8 @@ package cva6_config_pkg;
       DcacheByteSize: unsigned'(CVA6ConfigDcacheByteSize),
       DcacheSetAssoc: unsigned'(CVA6ConfigDcacheSetAssoc),
       DcacheLineWidth: unsigned'(CVA6ConfigDcacheLineWidth),
+      DcacheFlushOnFence: bit'(CVA6ConfigDcacheFlushOnFence),
+      DcacheInvalidateOnFlush: bit'(CVA6ConfigDcacheInvalidateOnFlush),
       DataUserEn: unsigned'(CVA6ConfigDataUserEn),
       WtDcacheWbufDepth: int'(CVA6ConfigWtDcacheWbufDepth),
       FetchUserWidth: unsigned'(CVA6ConfigFetchUserWidth),

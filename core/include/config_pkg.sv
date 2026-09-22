@@ -66,6 +66,8 @@ package config_pkg;
     bit                          RVH;
     // Sstc RISC-V extension
     bit                          RVSSTC;
+    // Legacy CLINT/ACLINT machine software interrupts, independent of AIA.
+    bit                          EnableClintIpi;
     // Zcb RISC-V extension
     bit                          RVZCB;
     // Zcmp RISC-V extension
@@ -271,6 +273,7 @@ package config_pkg;
     bit          RVC;
     bit          RVH;
     bit          RVSSTC;
+    bit          EnableClintIpi;
     bit          RVZCB;
     bit          RVZCMP;
     bit          RVCSRIND;
